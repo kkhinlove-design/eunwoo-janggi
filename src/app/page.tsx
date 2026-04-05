@@ -26,10 +26,15 @@ export default function Home() {
   const [error, setError] = useState('');
 
   const loadAllPlayers = async () => {
-    const { data } = await supabase
+    // janggi 컬럼이 아직 없을 수 있으므로 fallback
+    let { data } = await supabase
       .from('players')
       .select('*')
       .order('janggi_total_score', { ascending: false });
+    if (!data) {
+      const res = await supabase.from('players').select('*').order('name');
+      data = res.data;
+    }
     if (data) setAllPlayers(data);
   };
 
@@ -156,7 +161,7 @@ export default function Home() {
                       <div className="flex-1">
                         <span className="font-bold text-purple-700">{p.name}</span>
                         <div className="text-xs text-purple-400">
-                          {p.janggi_games_played}게임 | <span className="text-green-500">{p.janggi_games_won}승</span> | {p.janggi_total_score}점
+                          {p.janggi_games_played ?? 0}게임 | <span className="text-green-500">{p.janggi_games_won ?? 0}승</span> | {p.janggi_total_score ?? 0}점
                         </div>
                       </div>
                     </div>
@@ -179,10 +184,10 @@ export default function Home() {
             <div className="text-5xl mb-2">{player.avatar_emoji}</div>
             <h2 className="text-2xl font-bold text-purple-700">{player.name}</h2>
             <div className="flex justify-center gap-3 mt-2 text-sm text-purple-400">
-              <span>{player.janggi_games_played}게임</span>
+              <span>{player.janggi_games_played ?? 0}게임</span>
               <span>|</span>
-              <span className="text-green-500 font-semibold">{player.janggi_games_won}승</span>
-              <span className="text-yellow-500 font-bold">{player.janggi_total_score}점</span>
+              <span className="text-green-500 font-semibold">{player.janggi_games_won ?? 0}승</span>
+              <span className="text-yellow-500 font-bold">{player.janggi_total_score ?? 0}점</span>
             </div>
           </div>
 
