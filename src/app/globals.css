@@ -1,0 +1,188 @@
+@import "tailwindcss";
+
+:root {
+  --board-bg: #deb887;
+  --board-line: #8b6914;
+  --cho-color: #1a7a3a;
+  --han-color: #c41e3a;
+  --palace-line: rgba(139, 105, 20, 0.5);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+}
+
+/* Board */
+.janggi-board {
+  display: grid;
+  grid-template-rows: repeat(10, 1fr);
+  grid-template-columns: repeat(9, 1fr);
+  background: var(--board-bg);
+  border: 3px solid var(--board-line);
+  border-radius: 8px;
+  position: relative;
+  gap: 0;
+}
+
+.board-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  aspect-ratio: 1;
+  z-index: 1;
+}
+
+.board-cell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Grid lines - draw lines through cell centers */
+.board-cell::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Piece styling */
+.piece {
+  width: 80%;
+  height: 80%;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: clamp(0.7rem, 2.5vw, 1.2rem);
+  color: white;
+  z-index: 2;
+  position: relative;
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s;
+  user-select: none;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+.piece-cho {
+  background: radial-gradient(circle at 30% 30%, #2ecc71, #1a7a3a);
+}
+
+.piece-han {
+  background: radial-gradient(circle at 30% 30%, #e74c3c, #c41e3a);
+}
+
+.piece.selected {
+  transform: scale(1.15);
+  box-shadow: 0 0 12px 4px rgba(255, 215, 0, 0.8);
+}
+
+.valid-move-dot {
+  width: 30%;
+  height: 30%;
+  border-radius: 50%;
+  background: rgba(255, 215, 0, 0.7);
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  animation: pulse 1s infinite;
+}
+
+.valid-move-capture {
+  width: 80%;
+  height: 80%;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 215, 0, 0.8);
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+.last-move {
+  background: rgba(255, 215, 0, 0.2);
+}
+
+.check-indicator {
+  animation: checkFlash 0.5s infinite alternate;
+}
+
+@keyframes checkFlash {
+  from { box-shadow: 0 0 8px 4px rgba(255, 0, 0, 0.4); }
+  to { box-shadow: 0 0 16px 8px rgba(255, 0, 0, 0.8); }
+}
+
+/* Card and Button styles matching sudoku purple theme */
+.card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 1rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+  background: white;
+  color: #764ba2;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  border: 2px solid #764ba2;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: #f5f0ff;
+  transform: translateY(-2px);
+}
+
+/* Confetti */
+.confetti-piece {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  z-index: 1000;
+  animation: confettiFall 3s ease-in forwards;
+}
+
+@keyframes confettiFall {
+  0% {
+    opacity: 1;
+    transform: translateY(0) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(100vh) rotate(720deg);
+  }
+}
