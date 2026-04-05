@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   GameState,
   Player,
@@ -38,6 +38,11 @@ export default function JanggiBoard({
   const [validMoves, setValidMoves] = useState<[number, number][]>([]);
   const [lastMove, setLastMove] = useState<{ from: [number, number]; to: [number, number] } | null>(null);
   const [isAiThinking, setIsAiThinking] = useState(false);
+  const aiThinkingRef = useRef(false);
+  const onGameEndRef = useRef(onGameEnd);
+  const onMoveRef = useRef(onMove);
+  onGameEndRef.current = onGameEnd;
+  onMoveRef.current = onMove;
 
   const gameState = (isOnlineMultiplayer && externalGameState) ? externalGameState : internalGameState;
   const setGameState = isOnlineMultiplayer
@@ -59,8 +64,9 @@ export default function JanggiBoard({
 
   // AI move
   useEffect(() => {
-    if (isOnlineMultiplayer || gameState.winner || isPlayerTurn || !aiLevel || isAiThinking) return;
+    if (isOnlineMultiplayer || gameState.winner || isPlayerTurn || !aiLevel || aiThinkingRef.current) return;
 
+    aiThinkingRef.current = true;
     setIsAiThinking(true);
     const timer = setTimeout(() => {
       const move = getAiMove(gameState, aiLevel);
@@ -68,16 +74,21 @@ export default function JanggiBoard({
         const newState = makeMove(gameState, move.from, move.to);
         setGameState(newState);
         setLastMove({ from: move.from, to: move.to });
-        onMove?.(newState.moveHistory.length);
+        onMoveRef.current?.(newState.moveHistory.length);
         if (newState.winner) {
-          onGameEnd?.(newState.winner);
+          onGameEndRef.current?.(newState.winner);
         }
       }
+      aiThinkingRef.current = false;
       setIsAiThinking(false);
     }, 400 + Math.random() * 600);
 
-    return () => clearTimeout(timer);
-  }, [gameState, isPlayerTurn, aiLevel, isAiThinking, isOnlineMultiplayer, onGameEnd, onMove]);
+    return () => {
+      clearTimeout(timer);
+      aiThinkingRef.current = false;
+      setIsAiThinking(false);
+    };
+  }, [gameState, isPlayerTurn, aiLevel, isOnlineMultiplayer]);
 
   const handleCellClick = useCallback(
     (row: number, col: number) => {
