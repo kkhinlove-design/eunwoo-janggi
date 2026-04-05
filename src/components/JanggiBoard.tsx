@@ -38,19 +38,11 @@ export default function JanggiBoard({
   const [validMoves, setValidMoves] = useState<[number, number][]>([]);
   const [lastMove, setLastMove] = useState<{ from: [number, number]; to: [number, number] } | null>(null);
   const [isAiThinking, setIsAiThinking] = useState(false);
-  const aiThinkingRef = useRef(false);
-  const onGameEndRef = useRef(onGameEnd);
-  const onMoveRef = useRef(onMove);
-  onGameEndRef.current = onGameEnd;
-  onMoveRef.current = onMove;
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const gameStateRef = useRef(internalGameState);
+  gameStateRef.current = internalGameState;
 
   const gameState = (isOnlineMultiplayer && externalGameState) ? externalGameState : internalGameState;
-  const setGameState = isOnlineMultiplayer
-    ? (newState: GameState | ((prev: GameState) => GameState)) => {
-        const resolved = typeof newState === 'function' ? newState(gameState) : newState;
-        onBoardChange?.(resolved);
-      }
-    : setInternalGameState;
 
   useEffect(() => {
     if (isOnlineMultiplayer && externalGameState) {
@@ -62,33 +54,45 @@ export default function JanggiBoard({
   const flipped = playerSide === 'han' && !isLocalMultiplayer;
   const isPlayerTurn = isLocalMultiplayer || gameState.turn === playerSide;
 
-  // AI move
-  useEffect(() => {
-    if (isOnlineMultiplayer || gameState.winner || isPlayerTurn || !aiLevel || aiThinkingRef.current) return;
+  const scheduleAiMove = useCallback((currentState: GameState) => {
+    if (isOnlineMultiplayer || isLocalMultiplayer || !aiLevel || currentState.winner) return;
+    if (currentState.turn === playerSide) return;
 
-    aiThinkingRef.current = true;
+    if (timerRef.current) clearTimeout(timerRef.current);
     setIsAiThinking(true);
-    const timer = setTimeout(() => {
-      const move = getAiMove(gameState, aiLevel);
+    timerRef.current = setTimeout(() => {
+      const move = getAiMove(currentState, aiLevel);
       if (move) {
-        const newState = makeMove(gameState, move.from, move.to);
-        setGameState(newState);
+        const newState = makeMove(currentState, move.from, move.to);
+        if (isOnlineMultiplayer) {
+          onBoardChange?.(newState);
+        } else {
+          setInternalGameState(newState);
+        }
         setLastMove({ from: move.from, to: move.to });
-        onMoveRef.current?.(newState.moveHistory.length);
+        onMove?.(newState.moveHistory.length);
         if (newState.winner) {
-          onGameEndRef.current?.(newState.winner);
+          onGameEnd?.(newState.winner);
         }
       }
-      aiThinkingRef.current = false;
       setIsAiThinking(false);
+      timerRef.current = null;
     }, 400 + Math.random() * 600);
+  }, [aiLevel, playerSide, isOnlineMultiplayer, isLocalMultiplayer, onBoardChange, onMove, onGameEnd]);
 
+  // AI goes first (e.g., player is 'han')
+  useEffect(() => {
+    if (!isPlayerTurn && aiLevel && !gameState.winner && !isOnlineMultiplayer) {
+      scheduleAiMove(gameState);
+    }
     return () => {
-      clearTimeout(timer);
-      aiThinkingRef.current = false;
-      setIsAiThinking(false);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
     };
-  }, [gameState, isPlayerTurn, aiLevel, isOnlineMultiplayer]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleCellClick = useCallback(
     (row: number, col: number) => {
@@ -103,13 +107,19 @@ export default function JanggiBoard({
         const isValidTarget = validMoves.some(([r, c]) => r === boardRow && c === boardCol);
         if (isValidTarget) {
           const newState = makeMove(gameState, selected, [boardRow, boardCol]);
-          setGameState(newState);
+          if (isOnlineMultiplayer) {
+            onBoardChange?.(newState);
+          } else {
+            setInternalGameState(newState);
+          }
           setLastMove({ from: selected, to: [boardRow, boardCol] });
           setSelected(null);
           setValidMoves([]);
           onMove?.(newState.moveHistory.length);
           if (newState.winner) {
             onGameEnd?.(newState.winner);
+          } else {
+            scheduleAiMove(newState);
           }
           return;
         }
@@ -124,7 +134,7 @@ export default function JanggiBoard({
         setValidMoves([]);
       }
     },
-    [gameState, selected, validMoves, flipped, isPlayerTurn, isAiThinking, onGameEnd, onMove]
+    [gameState, selected, validMoves, flipped, isPlayerTurn, isAiThinking, isOnlineMultiplayer, onBoardChange, onGameEnd, onMove, scheduleAiMove]
   );
 
   const renderPiece = (piece: Piece | null, boardRow: number, boardCol: number) => {
