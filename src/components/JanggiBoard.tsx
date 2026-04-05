@@ -18,6 +18,12 @@ interface JanggiBoardProps {
   isLocalMultiplayer?: boolean;
   onGameEnd?: (winner: Player) => void;
   onMove?: (moveCount: number) => void;
+  /** External game state for online multiplayer (overrides internal state) */
+  externalGameState?: GameState | null;
+  /** Callback when a move is made in online mode - parent handles Supabase update */
+  onBoardChange?: (newState: GameState) => void;
+  /** If true, only allow moves for playerSide (online multiplayer) */
+  isOnlineMultiplayer?: boolean;
 }
 
 export default function JanggiBoard({
@@ -26,12 +32,33 @@ export default function JanggiBoard({
   isLocalMultiplayer = false,
   onGameEnd,
   onMove,
+  externalGameState,
+  onBoardChange,
+  isOnlineMultiplayer = false,
 }: JanggiBoardProps) {
-  const [gameState, setGameState] = useState<GameState>(createInitialState());
+  const [internalGameState, setInternalGameState] = useState<GameState>(createInitialState());
   const [selected, setSelected] = useState<[number, number] | null>(null);
   const [validMoves, setValidMoves] = useState<[number, number][]>([]);
   const [lastMove, setLastMove] = useState<{ from: [number, number]; to: [number, number] } | null>(null);
   const [isAiThinking, setIsAiThinking] = useState(false);
+
+  // Use external state for online multiplayer, internal for AI/local
+  const gameState = (isOnlineMultiplayer && externalGameState) ? externalGameState : internalGameState;
+  const setGameState = isOnlineMultiplayer
+    ? (newState: GameState | ((prev: GameState) => GameState)) => {
+        // For online, we notify parent instead of setting internal state
+        const resolved = typeof newState === 'function' ? newState(gameState) : newState;
+        onBoardChange?.(resolved);
+      }
+    : setInternalGameState;
+
+  // Sync external state changes (clear selection when opponent moves)
+  useEffect(() => {
+    if (isOnlineMultiplayer && externalGameState) {
+      setSelected(null);
+      setValidMoves([]);
+    }
+  }, [isOnlineMultiplayer, externalGameState]);
 
   // Flip board if player is han
   const flipped = playerSide === 'han' && !isLocalMultiplayer;
@@ -40,7 +67,7 @@ export default function JanggiBoard({
 
   // AI move
   useEffect(() => {
-    if (gameState.winner || isPlayerTurn || !aiLevel || isAiThinking) return;
+    if (isOnlineMultiplayer || gameState.winner || isPlayerTurn || !aiLevel || isAiThinking) return;
 
     setIsAiThinking(true);
     const timer = setTimeout(() => {
@@ -58,7 +85,7 @@ export default function JanggiBoard({
     }, 400 + Math.random() * 600);
 
     return () => clearTimeout(timer);
-  }, [gameState, isPlayerTurn, aiLevel, isAiThinking, onGameEnd, onMove]);
+  }, [gameState, isPlayerTurn, aiLevel, isAiThinking, isOnlineMultiplayer, onGameEnd, onMove]);
 
   const handleCellClick = useCallback(
     (row: number, col: number) => {

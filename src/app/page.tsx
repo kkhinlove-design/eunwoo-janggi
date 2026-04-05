@@ -2,28 +2,93 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+
+interface PlayerRecord {
+  id: string;
+  name: string;
+  avatar_emoji: string;
+  games_played: number;
+  games_won: number;
+}
 
 export default function Home() {
   const [name, setName] = useState('');
+  const [playerId, setPlayerId] = useState<string | null>(null);
   const [savedName, setSavedName] = useState('');
+  const [recentPlayers, setRecentPlayers] = useState<PlayerRecord[]>([]);
+  const [roomCode, setRoomCode] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem('janggi-player-name');
-    if (stored) {
-      setName(stored);
-      setSavedName(stored);
+    const storedId = localStorage.getItem('janggi-player-id');
+    const storedName = localStorage.getItem('janggi-player-name');
+    if (storedId && storedName) {
+      setPlayerId(storedId);
+      setName(storedName);
+      setSavedName(storedName);
     }
+    loadRecentPlayers();
   }, []);
 
-  const saveName = () => {
-    localStorage.setItem('janggi-player-name', name);
-    setSavedName(name);
+  const loadRecentPlayers = async () => {
+    const { data } = await supabase
+      .from('janggi_players')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(10);
+    if (data) setRecentPlayers(data);
   };
+
+  const saveName = async () => {
+    if (!name.trim()) return;
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('janggi_players')
+        .upsert({ name: name.trim() }, { onConflict: 'name' })
+        .select()
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        setPlayerId(data.id);
+        setSavedName(data.name);
+        localStorage.setItem('janggi-player-id', data.id);
+        localStorage.setItem('janggi-player-name', data.name);
+        loadRecentPlayers();
+      }
+    } catch {
+      // If upsert fails, try to fetch existing
+      const { data } = await supabase
+        .from('janggi_players')
+        .select()
+        .eq('name', name.trim())
+        .single();
+      if (data) {
+        setPlayerId(data.id);
+        setSavedName(data.name);
+        localStorage.setItem('janggi-player-id', data.id);
+        localStorage.setItem('janggi-player-name', data.name);
+      }
+    }
+    setIsLoading(false);
+  };
+
+  const quickLogin = (player: PlayerRecord) => {
+    setName(player.name);
+    setPlayerId(player.id);
+    setSavedName(player.name);
+    localStorage.setItem('janggi-player-id', player.id);
+    localStorage.setItem('janggi-player-name', player.name);
+  };
+
+  const isLoggedIn = !!playerId && !!savedName;
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="card p-8 max-w-md w-full text-center">
-        <div className="text-6xl mb-4">♟️</div>
+        <div className="text-6xl mb-4">&#9823;</div>
         <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2">
           은우의 장기
         </h1>
@@ -40,14 +105,38 @@ export default function Home() {
               className="flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
               onKeyDown={(e) => e.key === 'Enter' && saveName()}
             />
-            <button onClick={saveName} className="btn-primary text-sm !py-2 !px-3">
-              저장
+            <button
+              onClick={saveName}
+              disabled={isLoading}
+              className="btn-primary text-sm !py-2 !px-3"
+            >
+              {isLoading ? '...' : '저장'}
             </button>
           </div>
           {savedName && (
-            <p className="text-green-600 text-xs mt-1">안녕하세요, {savedName}님!</p>
+            <p className="text-green-600 text-xs mt-1">
+              안녕하세요, {savedName}님!
+            </p>
           )}
         </div>
+
+        {/* Recent players for quick login */}
+        {!isLoggedIn && recentPlayers.length > 0 && (
+          <div className="mb-6">
+            <p className="text-xs text-gray-500 mb-2">등록된 플레이어</p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              {recentPlayers.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => quickLogin(p)}
+                  className="px-3 py-1 bg-gray-100 hover:bg-purple-100 rounded-full text-sm text-gray-700 transition-colors"
+                >
+                  {p.avatar_emoji} {p.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Menu */}
         <div className="flex flex-col gap-3">
@@ -57,6 +146,50 @@ export default function Home() {
           <Link href="/local" className="btn-secondary text-center text-lg">
             👫 친구와 대결 (로컬 대전)
           </Link>
+
+          {/* Online multiplayer section */}
+          {isLoggedIn && (
+            <>
+              <div className="border-t pt-3 mt-1">
+                <p className="text-xs text-gray-500 mb-3">온라인 대전</p>
+                <Link
+                  href={`/room/new?player=${playerId}`}
+                  className="block w-full text-center text-lg py-3 px-4 rounded-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg"
+                >
+                  🏠 방 만들기
+                </Link>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={roomCode}
+                  onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                  placeholder="방 코드 (4자리)"
+                  maxLength={4}
+                  className="flex-1 px-3 py-2 border rounded-lg text-sm text-center font-mono tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && roomCode.length === 4) {
+                      window.location.href = `/room/${roomCode}?player=${playerId}`;
+                    }
+                  }}
+                />
+                <Link
+                  href={roomCode.length === 4 ? `/room/${roomCode}?player=${playerId}` : '#'}
+                  className={`btn-secondary text-sm !py-2 !px-4 ${
+                    roomCode.length !== 4 ? 'opacity-50 pointer-events-none' : ''
+                  }`}
+                >
+                  입장
+                </Link>
+              </div>
+            </>
+          )}
+
+          {!isLoggedIn && (
+            <p className="text-xs text-gray-400 mt-2">
+              온라인 대전을 하려면 먼저 이름을 저장하세요
+            </p>
+          )}
         </div>
 
         {/* Rules summary */}
