@@ -1,10 +1,12 @@
 'use client';
 
-import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-interface PlayerRecord {
+const AVATARS = ['😊', '🦊', '🐱', '🐶', '🐰', '🐼', '🦁', '🐸', '🐵', '🦄', '🐯', '🐮'];
+
+interface Player {
   id: string;
   name: string;
   avatar_emoji: string;
@@ -14,211 +16,215 @@ interface PlayerRecord {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [name, setName] = useState('');
-  const [playerId, setPlayerId] = useState<string | null>(null);
-  const [savedName, setSavedName] = useState('');
-  const [recentPlayers, setRecentPlayers] = useState<PlayerRecord[]>([]);
+  const [selectedAvatar, setSelectedAvatar] = useState('😊');
+  const [player, setPlayer] = useState<Player | null>(null);
+  const [allPlayers, setAllPlayers] = useState<Player[]>([]);
   const [roomCode, setRoomCode] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    const storedId = localStorage.getItem('janggi-player-id');
-    const storedName = localStorage.getItem('janggi-player-name');
-    if (storedId && storedName) {
-      setPlayerId(storedId);
-      setName(storedName);
-      setSavedName(storedName);
-    }
-    loadRecentPlayers();
-  }, []);
-
-  const loadRecentPlayers = async () => {
+  const loadAllPlayers = async () => {
     const { data } = await supabase
       .from('players')
       .select('*')
-      .order('janggi_total_score', { ascending: false })
-      .limit(10);
-    if (data) setRecentPlayers(data);
+      .order('janggi_total_score', { ascending: false });
+    if (data) setAllPlayers(data);
   };
 
-  const saveName = async () => {
+  useEffect(() => {
+    const saved = localStorage.getItem('janggi_player_id');
+    if (saved) {
+      supabase.from('players').select('*').eq('id', saved).single().then(({ data }) => {
+        if (data) setPlayer(data);
+      });
+    }
+    loadAllPlayers();
+  }, []);
+
+  const handleLogin = async () => {
     if (!name.trim()) return;
-    setIsLoading(true);
+    setLoading(true);
+    setError('');
     try {
-      // First, try to find existing player by name
       const { data: existing } = await supabase
         .from('players')
-        .select()
+        .select('*')
         .eq('name', name.trim())
         .single();
 
-      let data;
       if (existing) {
-        data = existing;
+        await supabase.from('players').update({ avatar_emoji: selectedAvatar }).eq('id', existing.id);
+        existing.avatar_emoji = selectedAvatar;
+        setPlayer(existing);
+        localStorage.setItem('janggi_player_id', existing.id);
       } else {
-        // Not found, insert new player
-        const { data: inserted, error } = await supabase
+        const { data: newPlayer, error: insertErr } = await supabase
           .from('players')
-          .insert({ name: name.trim() })
+          .insert({ name: name.trim(), avatar_emoji: selectedAvatar })
           .select()
           .single();
-        if (error) throw error;
-        data = inserted;
-      }
-
-      if (data) {
-        setPlayerId(data.id);
-        setSavedName(data.name);
-        localStorage.setItem('janggi-player-id', data.id);
-        localStorage.setItem('janggi-player-name', data.name);
-        loadRecentPlayers();
+        if (insertErr) throw insertErr;
+        setPlayer(newPlayer);
+        localStorage.setItem('janggi_player_id', newPlayer.id);
+        loadAllPlayers();
       }
     } catch {
-      // If insert fails, try to fetch existing
-      const { data } = await supabase
-        .from('players')
-        .select()
-        .eq('name', name.trim())
-        .single();
-      if (data) {
-        setPlayerId(data.id);
-        setSavedName(data.name);
-        localStorage.setItem('janggi-player-id', data.id);
-        localStorage.setItem('janggi-player-name', data.name);
-      }
+      setError('이름을 다시 확인해주세요!');
+    } finally {
+      setLoading(false);
     }
-    setIsLoading(false);
   };
 
-  const quickLogin = (player: PlayerRecord) => {
-    setName(player.name);
-    setPlayerId(player.id);
-    setSavedName(player.name);
-    localStorage.setItem('janggi-player-id', player.id);
-    localStorage.setItem('janggi-player-name', player.name);
+  const handleSelectPlayer = (p: Player) => {
+    setPlayer(p);
+    localStorage.setItem('janggi_player_id', p.id);
   };
 
-  const isLoggedIn = !!playerId && !!savedName;
+  const handleLogout = () => {
+    setPlayer(null);
+    setName('');
+    localStorage.removeItem('janggi_player_id');
+  };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="card p-8 max-w-md w-full text-center">
-        <div className="text-6xl mb-4">&#9823;</div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2">
-          은우의 장기
-        </h1>
-        <p className="text-gray-500 mb-6 text-sm">Korean Chess (Janggi)</p>
+  // 로그인 전
+  if (!player) {
+    return (
+      <div className="min-h-screen p-4 py-8">
+        <div className="max-w-md mx-auto">
+          <div className="game-card text-center mb-4">
+            <div className="text-6xl mb-3">♜</div>
+            <h1 className="text-3xl font-bold text-purple-700 mb-1">은우의 장기</h1>
+            <p className="text-purple-400 mb-5">친구들과 함께 즐기는 장기!</p>
 
-        {/* Player name */}
-        <div className="mb-6">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="이름을 입력하세요"
-              className="flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
-              onKeyDown={(e) => e.key === 'Enter' && saveName()}
-            />
+            <div className="mb-4">
+              <p className="text-sm text-purple-500 mb-2 font-semibold">캐릭터를 골라봐!</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {AVATARS.map(emoji => (
+                  <button
+                    key={emoji}
+                    onClick={() => setSelectedAvatar(emoji)}
+                    className={`text-2xl p-2 rounded-xl transition-all ${
+                      selectedAvatar === emoji ? 'bg-purple-100 scale-125 shadow-md' : 'hover:bg-purple-50'
+                    }`}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                placeholder="이름을 입력해줘! (예: 고은우)"
+                className="w-full px-4 py-3 rounded-xl border-2 border-purple-200 focus:border-purple-500 focus:outline-none text-center text-lg font-semibold"
+                maxLength={10}
+              />
+            </div>
+
+            {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
+
             <button
-              onClick={saveName}
-              disabled={isLoading}
-              className="btn-primary text-sm !py-2 !px-3"
+              onClick={handleLogin}
+              disabled={loading || !name.trim()}
+              className="btn-primary w-full disabled:opacity-50"
             >
-              {isLoading ? '...' : '저장'}
+              {loading ? '접속 중...' : `${selectedAvatar} 시작하기!`}
             </button>
           </div>
-          {savedName && (
-            <p className="text-green-600 text-xs mt-1">
-              안녕하세요, {savedName}님!
-            </p>
+
+          {allPlayers.length > 0 && (
+            <div className="game-card">
+              <h3 className="text-lg font-bold text-purple-700 mb-3 text-center">
+                등록된 친구들 ({allPlayers.length}명)
+              </h3>
+              <p className="text-xs text-purple-400 text-center mb-3">이름을 눌러서 바로 접속!</p>
+              <div className="space-y-2">
+                {allPlayers.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => handleSelectPlayer(p)}
+                    className="w-full text-left p-3 rounded-xl border-2 border-purple-100 hover:border-purple-400 hover:bg-purple-50 transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{p.avatar_emoji}</span>
+                      <div className="flex-1">
+                        <span className="font-bold text-purple-700">{p.name}</span>
+                        <div className="text-xs text-purple-400">
+                          {p.janggi_games_played}게임 | <span className="text-green-500">{p.janggi_games_won}승</span> | {p.janggi_total_score}점
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
         </div>
+      </div>
+    );
+  }
 
-        {/* Recent players for quick login */}
-        {!isLoggedIn && recentPlayers.length > 0 && (
-          <div className="mb-6">
-            <p className="text-xs text-gray-500 mb-2">등록된 플레이어</p>
-            <div className="flex flex-wrap gap-2 justify-center">
-              {recentPlayers.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => quickLogin(p)}
-                  className="px-3 py-1 bg-gray-100 hover:bg-purple-100 rounded-full text-sm text-gray-700 transition-colors"
-                >
-                  {p.avatar_emoji} {p.name}
-                </button>
-              ))}
+  // 로그인 후 로비
+  return (
+    <div className="min-h-screen p-4 py-8">
+      <div className="max-w-md mx-auto">
+        <div className="game-card mb-4">
+          <div className="text-center mb-5">
+            <div className="text-5xl mb-2">{player.avatar_emoji}</div>
+            <h2 className="text-2xl font-bold text-purple-700">{player.name}</h2>
+            <div className="flex justify-center gap-3 mt-2 text-sm text-purple-400">
+              <span>{player.janggi_games_played}게임</span>
+              <span>|</span>
+              <span className="text-green-500 font-semibold">{player.janggi_games_won}승</span>
+              <span className="text-yellow-500 font-bold">{player.janggi_total_score}점</span>
             </div>
           </div>
-        )}
 
-        {/* Menu */}
-        <div className="flex flex-col gap-3">
-          <Link href="/play" className="btn-primary text-center text-lg">
-            🤖 혼자 연습하기 (AI 대전)
-          </Link>
-          <Link href="/local" className="btn-secondary text-center text-lg">
-            👫 친구와 대결 (로컬 대전)
-          </Link>
+          <div className="flex flex-col gap-3">
+            <button onClick={() => router.push('/play')} className="btn-primary w-full text-lg">
+              🤖 AI 대결하기
+            </button>
 
-          {/* Online multiplayer section */}
-          {isLoggedIn && (
-            <>
-              <div className="border-t pt-3 mt-1">
-                <p className="text-xs text-gray-500 mb-3">온라인 대전</p>
-                <Link
-                  href={`/room/new?player=${playerId}`}
-                  className="block w-full text-center text-lg py-3 px-4 rounded-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg"
-                >
-                  🏠 방 만들기
-                </Link>
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={roomCode}
-                  onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                  placeholder="방 코드 (4자리)"
-                  maxLength={4}
-                  className="flex-1 px-3 py-2 border rounded-lg text-sm text-center font-mono tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-purple-400"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && roomCode.length === 4) {
-                      window.location.href = `/room/${roomCode}?player=${playerId}`;
-                    }
-                  }}
-                />
-                <Link
-                  href={roomCode.length === 4 ? `/room/${roomCode}?player=${playerId}` : '#'}
-                  className={`btn-secondary text-sm !py-2 !px-4 ${
-                    roomCode.length !== 4 ? 'opacity-50 pointer-events-none' : ''
-                  }`}
-                >
-                  입장
-                </Link>
-              </div>
-            </>
-          )}
+            <button onClick={() => router.push('/local')} className="btn-secondary w-full text-lg">
+              👫 로컬 대전
+            </button>
 
-          {!isLoggedIn && (
-            <p className="text-xs text-gray-400 mt-2">
-              온라인 대전을 하려면 먼저 이름을 저장하세요
-            </p>
-          )}
-        </div>
+            <button
+              onClick={() => router.push(`/room/new?player=${player.id}`)}
+              className="w-full text-lg py-3 rounded-xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:from-pink-600 hover:to-purple-600 transition-all"
+            >
+              🏠 방 만들기
+            </button>
 
-        {/* Rules summary */}
-        <div className="mt-6 text-left text-xs text-gray-500 bg-gray-50 rounded-lg p-3">
-          <p className="font-semibold text-gray-700 mb-1">장기 규칙 요약</p>
-          <ul className="space-y-0.5">
-            <li>궁 - 궁성 안에서 한 칸 이동</li>
-            <li>車 - 직선 무한 이동</li>
-            <li>包 - 하나를 뛰어넘어 이동 (포끼리 불가)</li>
-            <li>馬 - 날 일(日)자 이동 (막힘 있음)</li>
-            <li>象 - 날 용(用)자 이동 (막힘 있음)</li>
-            <li>士 - 궁성 안에서 한 칸 이동</li>
-            <li>卒/兵 - 앞 또는 옆으로 한 칸</li>
-          </ul>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={roomCode}
+                onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                onKeyDown={(e) => e.key === 'Enter' && roomCode.trim() && router.push(`/room/${roomCode.trim()}?player=${player.id}`)}
+                placeholder="방 코드"
+                className="flex-1 px-4 py-3 rounded-xl border-2 border-pink-200 focus:border-pink-500 focus:outline-none text-center font-bold text-lg uppercase"
+                maxLength={4}
+              />
+              <button
+                onClick={() => roomCode.trim() && router.push(`/room/${roomCode.trim()}?player=${player.id}`)}
+                disabled={!roomCode.trim()}
+                className="btn-secondary disabled:opacity-50 px-6"
+              >
+                입장!
+              </button>
+            </div>
+          </div>
+
+          <button onClick={handleLogout} className="mt-4 text-sm text-purple-300 hover:text-purple-500 w-full text-center">
+            다른 이름으로 접속하기
+          </button>
         </div>
       </div>
     </div>

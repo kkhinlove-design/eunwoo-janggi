@@ -1,46 +1,43 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface TimerProps {
-  isRunning: boolean;
-  onTimeUp?: () => void;
-  maxSeconds?: number;
-  label?: string;
+  running: boolean;
+  onTick?: (seconds: number) => void;
+  initialSeconds?: number;
 }
 
-export default function Timer({ isRunning, onTimeUp, maxSeconds, label }: TimerProps) {
-  const [seconds, setSeconds] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+export default function Timer({ running, onTick, initialSeconds = 0 }: TimerProps) {
+  const [seconds, setSeconds] = useState(initialSeconds);
 
   useEffect(() => {
-    if (isRunning) {
-      intervalRef.current = setInterval(() => {
-        setSeconds((s) => {
-          const next = s + 1;
-          if (maxSeconds && next >= maxSeconds) {
-            onTimeUp?.();
-          }
-          return next;
-        });
-      }, 1000);
-    } else if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [isRunning, maxSeconds, onTimeUp]);
+    setSeconds(initialSeconds);
+  }, [initialSeconds]);
+
+  const stableOnTick = useCallback((s: number) => {
+    onTick?.(s);
+  }, [onTick]);
+
+  useEffect(() => {
+    if (!running) return;
+    const interval = setInterval(() => {
+      setSeconds(prev => {
+        const next = prev + 1;
+        stableOnTick(next);
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [running, stableOnTick]);
 
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
 
   return (
-    <div className="flex items-center gap-2 text-white/90 font-mono text-lg">
-      {label && <span className="text-sm font-sans">{label}</span>}
-      <span>
-        {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
-      </span>
+    <div className="flex items-center gap-2 text-lg font-bold text-purple-600">
+      <span>&#9201;</span>
+      <span>{String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}</span>
     </div>
   );
 }

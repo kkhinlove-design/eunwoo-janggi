@@ -1,61 +1,75 @@
 @import "tailwindcss";
 
 :root {
-  --board-bg: #deb887;
+  --bg-gradient-from: #fdf2f8;
+  --bg-gradient-to: #ede9fe;
+  --primary: #8b5cf6;
+  --primary-light: #c4b5fd;
+  --accent: #f472b6;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --board-bg: #e8c97a;
+  --board-bg-dark: #d4a84b;
   --board-line: #8b6914;
   --cho-color: #1a7a3a;
   --han-color: #c41e3a;
-  --palace-line: rgba(139, 105, 20, 0.5);
-}
-
-* {
-  box-sizing: border-box;
 }
 
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--bg-gradient-from), var(--bg-gradient-to));
   min-height: 100vh;
+  min-height: 100dvh;
+  font-family: 'Pretendard', sans-serif;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
-/* Board */
-.janggi-board {
-  display: grid;
-  grid-template-rows: repeat(10, 1fr);
-  grid-template-columns: repeat(9, 1fr);
-  background: var(--board-bg);
-  border: 3px solid var(--board-line);
-  border-radius: 8px;
-  position: relative;
-  gap: 0;
+/* 카드 */
+.game-card {
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.1);
+  border: 2px solid #ede9fe;
 }
 
-.board-cell {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* 버튼 */
+.btn-primary {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 12px 28px;
+  font-size: 1rem;
+  font-weight: 700;
   cursor: pointer;
-  aspect-ratio: 1;
-  z-index: 1;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
 }
 
-.board-cell::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.4);
 }
 
-/* Grid lines - draw lines through cell centers */
-.board-cell::after {
-  content: '';
-  position: absolute;
-  pointer-events: none;
-  z-index: 0;
+.btn-secondary {
+  background: linear-gradient(135deg, #f472b6, #ec4899);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 12px 28px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(244, 114, 182, 0.3);
 }
 
-/* Piece styling */
+.btn-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(244, 114, 182, 0.4);
+}
+
+/* 장기 보드 기물 */
 .piece {
   width: 80%;
   height: 80%;
@@ -84,14 +98,14 @@ body {
 
 .piece.selected {
   transform: scale(1.15);
-  box-shadow: 0 0 12px 4px rgba(255, 215, 0, 0.8);
+  box-shadow: 0 0 12px 4px rgba(139, 92, 246, 0.8);
 }
 
 .valid-move-dot {
   width: 30%;
   height: 30%;
   border-radius: 50%;
-  background: rgba(255, 215, 0, 0.7);
+  background: rgba(139, 92, 246, 0.6);
   position: absolute;
   z-index: 1;
   pointer-events: none;
@@ -102,7 +116,7 @@ body {
   width: 80%;
   height: 80%;
   border-radius: 50%;
-  border: 3px solid rgba(255, 215, 0, 0.8);
+  border: 3px solid rgba(139, 92, 246, 0.8);
   position: absolute;
   z-index: 3;
   pointer-events: none;
@@ -115,7 +129,8 @@ body {
 }
 
 .last-move {
-  background: rgba(255, 215, 0, 0.2);
+  background: rgba(251, 191, 36, 0.25);
+  border-radius: 50%;
 }
 
 .check-indicator {
@@ -123,66 +138,81 @@ body {
 }
 
 @keyframes checkFlash {
-  from { box-shadow: 0 0 8px 4px rgba(255, 0, 0, 0.4); }
-  to { box-shadow: 0 0 16px 8px rgba(255, 0, 0, 0.8); }
+  from { box-shadow: 0 0 8px 4px rgba(239, 68, 68, 0.4); }
+  to { box-shadow: 0 0 16px 8px rgba(239, 68, 68, 0.8); }
 }
 
-/* Card and Button styles matching sudoku purple theme */
-.card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 1rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+/* 프로그레스 바 */
+.progress-bar {
+  height: 12px;
+  border-radius: 6px;
+  background: #e9d5ff;
+  overflow: hidden;
 }
 
-.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.75rem;
-  font-weight: 600;
-  transition: all 0.2s;
-  border: none;
-  cursor: pointer;
+.progress-fill {
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #8b5cf6, #f472b6);
+  transition: width 0.5s ease;
 }
 
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+/* 애니메이션 */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
 }
 
-.btn-secondary {
-  background: white;
-  color: #764ba2;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.75rem;
-  font-weight: 600;
-  transition: all 0.2s;
-  border: 2px solid #764ba2;
-  cursor: pointer;
+@keyframes bounce-in {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
 }
 
-.btn-secondary:hover {
-  background: #f5f0ff;
-  transform: translateY(-2px);
+@keyframes confetti-fall {
+  0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
 }
 
-/* Responsive breakpoints */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.4s ease forwards;
+}
+
+/* confetti */
+.confetti-piece {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  animation: confetti-fall 3s ease-in forwards;
+  z-index: 1000;
+}
+
+/* 잡은 기물 */
+.captured-pieces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  min-height: 28px;
+  font-size: 1.2rem;
+}
+
+/* 반응형 */
 @media (max-width: 480px) {
   .piece {
     font-size: clamp(0.6rem, 3vw, 0.9rem);
     border-width: 1.5px;
   }
 
-  .btn-primary,
-  .btn-secondary {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-  }
-
-  .card {
-    border-radius: 0.75rem;
-    padding: 1rem;
+  .game-card {
+    padding: 14px;
+    border-radius: 14px;
   }
 }
 
@@ -196,24 +226,8 @@ body {
   .piece {
     font-size: clamp(0.8rem, 2vw, 1.2rem);
   }
-}
 
-/* Confetti */
-.confetti-piece {
-  position: fixed;
-  width: 10px;
-  height: 10px;
-  z-index: 1000;
-  animation: confettiFall 3s ease-in forwards;
-}
-
-@keyframes confettiFall {
-  0% {
-    opacity: 1;
-    transform: translateY(0) rotate(0deg);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(100vh) rotate(720deg);
+  .game-card {
+    padding: 32px;
   }
 }

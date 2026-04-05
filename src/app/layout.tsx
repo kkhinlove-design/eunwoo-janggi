@@ -1,16 +1,16 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
-export const viewport = {
+export const metadata: Metadata = {
+  title: "은우의 장기",
+  description: "은우의 장기 - AI 대결 & 온라인 대전",
+};
+
+export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-};
-
-export const metadata: Metadata = {
-  title: "은우의 장기",
-  description: "한국 장기 게임 - Korean Chess (Janggi)",
 };
 
 export default function RootLayout({
@@ -19,8 +19,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko">
-      <body className="antialiased">{children}</body>
+    <html lang="ko" className="h-full">
+      <head>
+        <link
+          rel="preconnect"
+          href="https://cdn.jsdelivr.net"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="min-h-full antialiased">{children}</body>
     </html>
   );
 }

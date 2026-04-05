@@ -1,151 +1,195 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
+import { useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import JanggiBoard from '@/components/JanggiBoard';
 import Timer from '@/components/Timer';
 import Confetti from '@/components/Confetti';
 import { Player } from '@/lib/janggi';
 import { AiLevel } from '@/lib/janggi-ai';
 
-const AI_LEVELS: { key: AiLevel; label: string; desc: string }[] = [
-  { key: 'baby', label: '아기', desc: '랜덤 수' },
-  { key: 'student', label: '학생', desc: '기물 먹기 우선' },
-  { key: 'genius', label: '천재', desc: '2수 앞 계산' },
-  { key: 'robot', label: '로봇', desc: '3수 앞 계산' },
+type GamePhase = 'setup' | 'playing' | 'ended';
+
+const AI_LEVELS: { key: AiLevel; label: string; emoji: string; desc: string }[] = [
+  { key: 'baby', label: '아기 AI', emoji: '👶', desc: '랜덤 수' },
+  { key: 'student', label: '학생 AI', emoji: '🧑‍🎓', desc: '기물 먹기 우선' },
+  { key: 'genius', label: '천재 AI', emoji: '🧠', desc: '2수 앞 계산' },
+  { key: 'robot', label: '로봇 AI', emoji: '🤖', desc: '3수 앞 계산' },
 ];
 
 export default function PlayPage() {
-  const [gameStarted, setGameStarted] = useState(false);
+  const router = useRouter();
+  const [phase, setPhase] = useState<GamePhase>('setup');
   const [playerSide, setPlayerSide] = useState<Player>('cho');
-  const [aiLevel, setAiLevel] = useState<AiLevel>('student');
-  const [winner, setWinner] = useState<Player | null>(null);
+  const [aiLevel, setAiLevel] = useState<AiLevel>('baby');
+  const [timerRunning, setTimerRunning] = useState(false);
+  const [result, setResult] = useState<{ winner: Player; moveCount: number } | null>(null);
   const [moveCount, setMoveCount] = useState(0);
   const [gameKey, setGameKey] = useState(0);
 
   const startGame = () => {
-    setGameStarted(true);
-    setWinner(null);
+    setPhase('playing');
+    setTimerRunning(true);
+    setResult(null);
     setMoveCount(0);
-    setGameKey((k) => k + 1);
+    setGameKey(k => k + 1);
   };
 
-  const handleGameEnd = (w: Player) => {
-    setWinner(w);
+  const handleGameEnd = useCallback((winner: Player) => {
+    setResult({ winner, moveCount });
+    setPhase('ended');
+    setTimerRunning(false);
+  }, [moveCount]);
+
+  const getResultMessage = () => {
+    if (!result) return '';
+    if (result.winner === playerSide) return '승리! 축하합니다!';
+    return 'AI가 이겼습니다...';
   };
 
-  if (!gameStarted) {
+  const getResultEmoji = () => {
+    if (!result) return '';
+    if (result.winner === playerSide) return '🎉';
+    return '😢';
+  };
+
+  if (phase === 'setup') {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="card p-8 max-w-md w-full">
-          <Link href="/" className="text-purple-600 text-sm hover:underline mb-4 inline-block">
-            &larr; 메인으로
-          </Link>
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-            🤖 AI 대전 설정
+      <main className="min-h-screen flex flex-col items-center justify-center p-4">
+        <div className="game-card w-full max-w-md space-y-6">
+          <button
+            onClick={() => router.push('/')}
+            className="text-purple-500 text-sm font-semibold hover:text-purple-700"
+          >
+            &larr; 돌아가기
+          </button>
+
+          <h2 className="text-2xl font-extrabold text-center text-purple-700">
+            🤖 AI 대결
           </h2>
 
-          {/* Side selection */}
-          <div className="mb-6">
-            <p className="text-sm font-semibold text-gray-700 mb-2">진영 선택</p>
+          {/* 진영 선택 */}
+          <div>
+            <h3 className="font-bold text-purple-600 mb-2">진영 선택</h3>
             <div className="flex gap-3">
               <button
                 onClick={() => setPlayerSide('cho')}
-                className={`flex-1 py-3 rounded-xl font-bold text-lg transition-all ${
+                className={`flex-1 py-3 rounded-xl font-bold text-lg transition-all border-2 ${
                   playerSide === 'cho'
-                    ? 'bg-green-600 text-white shadow-lg scale-105'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'border-purple-500 bg-purple-100 text-purple-700'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-purple-300'
                 }`}
               >
-                초 (Green)
-                <div className="text-xs font-normal mt-0.5">선공</div>
+                🟢 초(선공)
               </button>
               <button
                 onClick={() => setPlayerSide('han')}
-                className={`flex-1 py-3 rounded-xl font-bold text-lg transition-all ${
+                className={`flex-1 py-3 rounded-xl font-bold text-lg transition-all border-2 ${
                   playerSide === 'han'
-                    ? 'bg-red-600 text-white shadow-lg scale-105'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'border-purple-500 bg-purple-100 text-purple-700'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-purple-300'
                 }`}
               >
-                한 (Red)
-                <div className="text-xs font-normal mt-0.5">후공</div>
+                🔴 한(후공)
               </button>
             </div>
           </div>
 
-          {/* AI level */}
-          <div className="mb-6">
-            <p className="text-sm font-semibold text-gray-700 mb-2">AI 난이도</p>
-            <div className="grid grid-cols-2 gap-2">
-              {AI_LEVELS.map((lvl) => (
+          {/* AI 난이도 */}
+          <div>
+            <h3 className="font-bold text-purple-600 mb-2">AI 난이도</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {AI_LEVELS.map(level => (
                 <button
-                  key={lvl.key}
-                  onClick={() => setAiLevel(lvl.key)}
-                  className={`py-3 px-4 rounded-xl text-left transition-all ${
-                    aiLevel === lvl.key
-                      ? 'bg-purple-600 text-white shadow-lg scale-105'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  key={level.key}
+                  onClick={() => setAiLevel(level.key)}
+                  className={`p-3 rounded-xl text-left transition-all border-2 ${
+                    aiLevel === level.key
+                      ? 'border-purple-500 bg-purple-100'
+                      : 'border-gray-200 bg-white hover:border-purple-300'
                   }`}
                 >
-                  <div className="font-bold">{lvl.label}</div>
-                  <div className={`text-xs ${aiLevel === lvl.key ? 'text-purple-200' : 'text-gray-500'}`}>
-                    {lvl.desc}
-                  </div>
+                  <div className="text-2xl mb-1">{level.emoji}</div>
+                  <div className="font-bold text-sm text-gray-800">{level.label}</div>
+                  <div className="text-xs text-gray-500">{level.desc}</div>
                 </button>
               ))}
             </div>
           </div>
 
-          <button onClick={startGame} className="btn-primary w-full text-lg">
+          <button onClick={startGame} className="btn-primary w-full py-4 text-lg">
             게임 시작!
           </button>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center p-4">
-      {winner && <Confetti />}
-      <div className="w-full max-w-[600px]">
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-          <Link href="/" className="text-white/80 text-sm hover:underline">
-            &larr; 메인
-          </Link>
-          <Timer isRunning={!winner} label="경과 시간" />
-          <div className="text-white/80 text-sm">
-            수: {moveCount}
-          </div>
+    <main className="min-h-screen flex flex-col items-center p-4 pt-6">
+      {/* Header */}
+      <div className="w-full max-w-2xl flex flex-wrap items-center justify-between mb-4">
+        <button
+          onClick={() => {
+            setPhase('setup');
+            setTimerRunning(false);
+          }}
+          className="text-purple-500 text-sm font-semibold hover:text-purple-700"
+        >
+          &larr; 설정
+        </button>
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-bold text-purple-600">
+            {AI_LEVELS.find(l => l.key === aiLevel)?.emoji}{' '}
+            {AI_LEVELS.find(l => l.key === aiLevel)?.label}
+          </span>
+          <Timer running={timerRunning} />
         </div>
+      </div>
 
-        <JanggiBoard
-          key={gameKey}
-          playerSide={playerSide}
-          aiLevel={aiLevel}
-          onGameEnd={handleGameEnd}
-          onMove={setMoveCount}
-        />
+      {/* Board */}
+      <JanggiBoard
+        key={gameKey}
+        playerSide={playerSide}
+        aiLevel={aiLevel}
+        onGameEnd={handleGameEnd}
+        onMove={setMoveCount}
+      />
 
-        {winner && (
-          <div className="card p-6 mt-4 text-center">
-            <h3 className="text-xl font-bold text-gray-800 mb-2">
-              {winner === playerSide ? '축하합니다! 승리!' : 'AI가 이겼습니다...'}
-            </h3>
-            <p className="text-gray-500 text-sm mb-4">
-              {winner === 'cho' ? '초 (Green)' : '한 (Red)'} 승리 | {moveCount}수
-            </p>
-            <div className="flex gap-3 justify-center">
-              <button onClick={startGame} className="btn-primary">
-                다시 하기
-              </button>
-              <Link href="/" className="btn-secondary">
-                메인으로
-              </Link>
+      {/* Result overlay */}
+      {phase === 'ended' && result && (
+        <>
+          {result.winner === playerSide && <Confetti />}
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-40 p-4">
+            <div className="game-card text-center space-y-4 animate-bounce-in max-w-sm w-full">
+              <div className="text-5xl">{getResultEmoji()}</div>
+              <h2 className="text-2xl font-extrabold text-purple-700">
+                {getResultMessage()}
+              </h2>
+              <p className="text-gray-500 text-sm">
+                {result.winner === 'cho' ? '초(Green)' : '한(Red)'} 승리 | {moveCount}수
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setPhase('setup');
+                    setResult(null);
+                  }}
+                  className="btn-secondary flex-1 py-3"
+                >
+                  설정으로
+                </button>
+                <button
+                  onClick={startGame}
+                  className="btn-primary flex-1 py-3"
+                >
+                  다시 하기
+                </button>
+              </div>
             </div>
           </div>
-        )}
-      </div>
-    </div>
+        </>
+      )}
+    </main>
   );
 }

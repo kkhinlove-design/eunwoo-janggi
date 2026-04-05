@@ -2,46 +2,35 @@
 
 import { useEffect, useState } from 'react';
 
-interface ConfettiPiece {
-  id: number;
-  x: number;
-  color: string;
-  delay: number;
-  size: number;
-}
+const COLORS = ['#8b5cf6', '#f472b6', '#34d399', '#fbbf24', '#60a5fa', '#f87171'];
 
 export default function Confetti() {
-  const [pieces, setPieces] = useState<ConfettiPiece[]>([]);
+  const [pieces, setPieces] = useState<Array<{ id: number; left: number; color: string; delay: number; size: number }>>([]);
 
   useEffect(() => {
-    const colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#ffd700', '#00f2fe'];
-    const newPieces: ConfettiPiece[] = [];
-    for (let i = 0; i < 50; i++) {
-      newPieces.push({
-        id: i,
-        x: Math.random() * 100,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        delay: Math.random() * 2,
-        size: 6 + Math.random() * 8,
-      });
-    }
+    const newPieces = Array.from({ length: 50 }, (_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      delay: Math.random() * 2,
+      size: 6 + Math.random() * 8,
+    }));
     setPieces(newPieces);
   }, []);
 
   return (
     <div className="fixed inset-0 pointer-events-none z-50">
-      {pieces.map((p) => (
+      {pieces.map(p => (
         <div
           key={p.id}
           className="confetti-piece"
           style={{
-            left: `${p.x}%`,
-            top: '-10px',
+            left: `${p.left}%`,
+            backgroundColor: p.color,
             width: p.size,
             height: p.size,
-            backgroundColor: p.color,
             animationDelay: `${p.delay}s`,
-            borderRadius: Math.random() > 0.5 ? '50%' : '0',
+            borderRadius: Math.random() > 0.5 ? '50%' : '2px',
           }}
         />
       ))}
