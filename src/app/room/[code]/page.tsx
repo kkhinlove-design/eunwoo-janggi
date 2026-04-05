@@ -66,7 +66,7 @@ function RoomInner({ code }: { code: string }) {
     // Load players with names
     const { data: roomPlayers } = await supabase
       .from('janggi_room_players')
-      .select('*, player:janggi_players(id, name, avatar_emoji)')
+      .select('*, player:players(id, name, avatar_emoji)')
       .eq('room_id', roomData.id);
 
     if (roomPlayers) {

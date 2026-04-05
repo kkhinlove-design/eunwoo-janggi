@@ -8,8 +8,9 @@ interface PlayerRecord {
   id: string;
   name: string;
   avatar_emoji: string;
-  games_played: number;
-  games_won: number;
+  janggi_games_played: number;
+  janggi_games_won: number;
+  janggi_total_score: number;
 }
 
 export default function Home() {
@@ -33,9 +34,9 @@ export default function Home() {
 
   const loadRecentPlayers = async () => {
     const { data } = await supabase
-      .from('janggi_players')
+      .from('players')
       .select('*')
-      .order('created_at', { ascending: false })
+      .order('janggi_total_score', { ascending: false })
       .limit(10);
     if (data) setRecentPlayers(data);
   };
@@ -44,13 +45,27 @@ export default function Home() {
     if (!name.trim()) return;
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('janggi_players')
-        .upsert({ name: name.trim() }, { onConflict: 'name' })
+      // First, try to find existing player by name
+      const { data: existing } = await supabase
+        .from('players')
         .select()
+        .eq('name', name.trim())
         .single();
 
-      if (error) throw error;
+      let data;
+      if (existing) {
+        data = existing;
+      } else {
+        // Not found, insert new player
+        const { data: inserted, error } = await supabase
+          .from('players')
+          .insert({ name: name.trim() })
+          .select()
+          .single();
+        if (error) throw error;
+        data = inserted;
+      }
+
       if (data) {
         setPlayerId(data.id);
         setSavedName(data.name);
@@ -59,9 +74,9 @@ export default function Home() {
         loadRecentPlayers();
       }
     } catch {
-      // If upsert fails, try to fetch existing
+      // If insert fails, try to fetch existing
       const { data } = await supabase
-        .from('janggi_players')
+        .from('players')
         .select()
         .eq('name', name.trim())
         .single();
