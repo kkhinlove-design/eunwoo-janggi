@@ -167,6 +167,37 @@ body {
   transform: translateY(-2px);
 }
 
+/* Responsive breakpoints */
+@media (max-width: 480px) {
+  .piece {
+    font-size: clamp(0.6rem, 3vw, 0.9rem);
+    border-width: 1.5px;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .card {
+    border-radius: 0.75rem;
+    padding: 1rem;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  .piece {
+    font-size: clamp(0.7rem, 2.5vw, 1.1rem);
+  }
+}
+
+@media (min-width: 769px) {
+  .piece {
+    font-size: clamp(0.8rem, 2vw, 1.2rem);
+  }
+}
+
 /* Confetti */
 .confetti-piece {
   position: fixed;

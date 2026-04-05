@@ -145,7 +145,7 @@ export default function JanggiBoard({
   return (
     <div className="flex flex-col items-center gap-3">
       {/* Turn indicator */}
-      <div className="flex items-center gap-4 text-white">
+      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-white">
         <div
           className={`px-3 py-1 rounded-full text-sm font-bold ${
             gameState.turn === 'han'
@@ -173,7 +173,7 @@ export default function JanggiBoard({
       )}
 
       {/* Board */}
-      <div className="relative" style={{ width: 'min(90vw, 450px)' }}>
+      <div className="relative" style={{ width: 'min(95vw, 560px)' }}>
         <div
           className="relative w-full"
           style={{

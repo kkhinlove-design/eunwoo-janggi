@@ -25,8 +25,8 @@ export default function LocalPage() {
   return (
     <div className="min-h-screen flex flex-col items-center p-4">
       {winner && <Confetti />}
-      <div className="w-full max-w-lg">
-        <div className="flex items-center justify-between mb-3">
+      <div className="w-full max-w-[600px]">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
           <Link href="/" className="text-white/80 text-sm hover:underline">
             &larr; 메인
           </Link>
