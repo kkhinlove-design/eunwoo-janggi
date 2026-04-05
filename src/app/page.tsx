@@ -26,16 +26,15 @@ export default function Home() {
   const [error, setError] = useState('');
 
   const loadAllPlayers = async () => {
-    // janggi 컬럼이 아직 없을 수 있으므로 fallback
-    let { data } = await supabase
+    const { data, error } = await supabase
       .from('players')
       .select('*')
-      .order('janggi_total_score', { ascending: false });
-    if (!data) {
-      const res = await supabase.from('players').select('*').order('name');
-      data = res.data;
+      .order('name');
+    if (data) {
+      // janggi_total_score가 있으면 그걸로 정렬
+      data.sort((a, b) => (b.janggi_total_score ?? 0) - (a.janggi_total_score ?? 0));
+      setAllPlayers(data);
     }
-    if (data) setAllPlayers(data);
   };
 
   useEffect(() => {
