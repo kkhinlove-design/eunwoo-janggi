@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-const COLORS = ['#8b5cf6', '#f472b6', '#34d399', '#fbbf24', '#60a5fa', '#f87171'];
+const COLORS = ['#ff6b35', '#ff6b9d', '#2ec4b6', '#ffd166', '#06d6a0', '#118ab2', '#ff9f1c', '#e71d36'];
 
 export default function Confetti() {
   const [pieces, setPieces] = useState<Array<{ id: number; left: number; color: string; delay: number; size: number }>>([]);

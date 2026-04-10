@@ -35,7 +35,7 @@ export default function Timer({ running, onTick, initialSeconds = 0 }: TimerProp
   const secs = seconds % 60;
 
   return (
-    <div className="flex items-center gap-2 text-lg font-bold text-purple-600">
+    <div className="flex items-center gap-2 text-lg font-bold text-orange-600">
       <span>&#9201;</span>
       <span>{String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}</span>
     </div>

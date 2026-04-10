@@ -26,25 +26,26 @@ export default function Home() {
   const [error, setError] = useState('');
 
   const loadAllPlayers = async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('players')
       .select('*')
       .order('name');
     if (data) {
-      // janggi_total_score가 있으면 그걸로 정렬
       data.sort((a, b) => (b.janggi_total_score ?? 0) - (a.janggi_total_score ?? 0));
       setAllPlayers(data);
     }
   };
 
   useEffect(() => {
+    let cancelled = false;
     const saved = localStorage.getItem('janggi_player_id');
     if (saved) {
-      supabase.from('players').select('*').eq('id', saved).single().then(({ data }) => {
-        if (data) setPlayer(data);
+      supabase.from('players').select('*').eq('id', saved).single().then(({ data, error: err }) => {
+        if (!cancelled && data && !err) setPlayer(data);
       });
     }
     loadAllPlayers();
+    return () => { cancelled = true; };
   }, []);
 
   const handleLogin = async () => {
@@ -98,19 +99,19 @@ export default function Home() {
       <div className="min-h-screen p-4 py-8">
         <div className="max-w-md mx-auto">
           <div className="game-card text-center mb-4">
-            <div className="text-6xl mb-3">♜</div>
-            <h1 className="text-3xl font-bold text-purple-700 mb-1">은우의 장기</h1>
-            <p className="text-purple-400 mb-5">친구들과 함께 즐기는 장기!</p>
+            <div className="text-6xl mb-3 animate-float">♜</div>
+            <h1 className="text-3xl font-black bg-gradient-to-r from-orange-500 via-pink-500 to-teal-500 bg-clip-text text-transparent mb-1">은우의 장기</h1>
+            <p className="text-orange-400 mb-5 font-semibold">친구들과 함께 즐기는 장기!</p>
 
             <div className="mb-4">
-              <p className="text-sm text-purple-500 mb-2 font-semibold">캐릭터를 골라봐!</p>
+              <p className="text-sm text-teal-600 mb-2 font-bold">캐릭터를 골라봐!</p>
               <div className="flex flex-wrap justify-center gap-2">
                 {AVATARS.map(emoji => (
                   <button
                     key={emoji}
                     onClick={() => setSelectedAvatar(emoji)}
                     className={`text-2xl p-2 rounded-xl transition-all ${
-                      selectedAvatar === emoji ? 'bg-purple-100 scale-125 shadow-md' : 'hover:bg-purple-50'
+                      selectedAvatar === emoji ? 'bg-orange-100 scale-125 shadow-lg ring-2 ring-orange-300' : 'hover:bg-orange-50 hover:scale-110'
                     }`}
                   >
                     {emoji}
@@ -126,7 +127,7 @@ export default function Home() {
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                 placeholder="이름을 입력해줘! (예: 고은우)"
-                className="w-full px-4 py-3 rounded-xl border-2 border-purple-200 focus:border-purple-500 focus:outline-none text-center text-lg font-semibold"
+                className="w-full px-4 py-3 rounded-xl border-2 border-orange-200 focus:border-orange-500 focus:outline-none text-center text-lg font-bold"
                 maxLength={10}
               />
             </div>
@@ -144,23 +145,24 @@ export default function Home() {
 
           {allPlayers.length > 0 && (
             <div className="game-card">
-              <h3 className="text-lg font-bold text-purple-700 mb-3 text-center">
+              <h3 className="text-lg font-bold text-orange-600 mb-3 text-center">
                 등록된 친구들 ({allPlayers.length}명)
               </h3>
-              <p className="text-xs text-purple-400 text-center mb-3">이름을 눌러서 바로 접속!</p>
+              <p className="text-xs text-gray-400 text-center mb-3">이름을 눌러서 바로 접속!</p>
               <div className="space-y-2">
-                {allPlayers.map((p) => (
+                {allPlayers.map((p, i) => (
                   <button
                     key={p.id}
                     onClick={() => handleSelectPlayer(p)}
-                    className="w-full text-left p-3 rounded-xl border-2 border-purple-100 hover:border-purple-400 hover:bg-purple-50 transition-all"
+                    className="w-full text-left p-3 rounded-xl border-2 border-orange-100 hover:border-orange-400 hover:bg-orange-50 transition-all"
                   >
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">{p.avatar_emoji}</span>
                       <div className="flex-1">
-                        <span className="font-bold text-purple-700">{p.name}</span>
-                        <div className="text-xs text-purple-400">
-                          {p.janggi_games_played ?? 0}게임 | <span className="text-green-500">{p.janggi_games_won ?? 0}승</span> | {p.janggi_total_score ?? 0}점
+                        <span className="font-bold text-gray-800">{p.name}</span>
+                        {i === 0 && (p.janggi_total_score ?? 0) > 0 && <span className="ml-1 text-xs">👑</span>}
+                        <div className="text-xs text-gray-400">
+                          {p.janggi_games_played ?? 0}게임 | <span className="text-green-500 font-bold">{p.janggi_games_won ?? 0}승</span> | <span className="text-orange-500 font-bold">{p.janggi_total_score ?? 0}점</span>
                         </div>
                       </div>
                     </div>
@@ -180,13 +182,13 @@ export default function Home() {
       <div className="max-w-md mx-auto">
         <div className="game-card mb-4">
           <div className="text-center mb-5">
-            <div className="text-5xl mb-2">{player.avatar_emoji}</div>
-            <h2 className="text-2xl font-bold text-purple-700">{player.name}</h2>
-            <div className="flex justify-center gap-3 mt-2 text-sm text-purple-400">
+            <div className="text-5xl mb-2 animate-float">{player.avatar_emoji}</div>
+            <h2 className="text-2xl font-black text-gray-800">{player.name}</h2>
+            <div className="flex justify-center gap-3 mt-2 text-sm text-gray-500">
               <span>{player.janggi_games_played ?? 0}게임</span>
               <span>|</span>
-              <span className="text-green-500 font-semibold">{player.janggi_games_won ?? 0}승</span>
-              <span className="text-yellow-500 font-bold">{player.janggi_total_score ?? 0}점</span>
+              <span className="text-green-500 font-bold">{player.janggi_games_won ?? 0}승</span>
+              <span className="text-orange-500 font-extrabold">{player.janggi_total_score ?? 0}점</span>
             </div>
           </div>
 
@@ -201,7 +203,7 @@ export default function Home() {
 
             <button
               onClick={() => router.push(`/room/new?player=${player.id}`)}
-              className="w-full text-lg py-3 rounded-xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:from-pink-600 hover:to-purple-600 transition-all"
+              className="w-full text-lg py-3 rounded-xl font-extrabold bg-gradient-to-r from-pink-500 to-orange-500 text-white hover:from-pink-600 hover:to-orange-600 transition-all shadow-lg hover:shadow-xl hover:-translate-y-1"
             >
               🏠 방 만들기
             </button>
@@ -213,8 +215,8 @@ export default function Home() {
                 onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
                 onKeyDown={(e) => e.key === 'Enter' && roomCode.trim() && router.push(`/room/${roomCode.trim()}?player=${player.id}`)}
                 placeholder="방 코드"
-                className="flex-1 px-4 py-3 rounded-xl border-2 border-pink-200 focus:border-pink-500 focus:outline-none text-center font-bold text-lg uppercase"
-                maxLength={4}
+                className="flex-1 px-4 py-3 rounded-xl border-2 border-orange-200 focus:border-orange-500 focus:outline-none text-center font-bold text-lg uppercase"
+                maxLength={6}
               />
               <button
                 onClick={() => roomCode.trim() && router.push(`/room/${roomCode.trim()}?player=${player.id}`)}
@@ -226,7 +228,7 @@ export default function Home() {
             </div>
           </div>
 
-          <button onClick={handleLogout} className="mt-4 text-sm text-purple-300 hover:text-purple-500 w-full text-center">
+          <button onClick={handleLogout} className="mt-4 text-sm text-gray-400 hover:text-orange-500 w-full text-center transition-colors">
             다른 이름으로 접속하기
           </button>
         </div>

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import JanggiBoard from '@/components/JanggiBoard';
 import Timer from '@/components/Timer';
 import Confetti from '@/components/Confetti';
-import { Player } from '@/lib/janggi';
+import type { Player } from '@/lib/janggi';
 
 type GamePhase = 'setup' | 'playing' | 'ended';
 
@@ -45,18 +45,18 @@ export default function LocalPage() {
         <div className="game-card w-full max-w-md space-y-6">
           <button
             onClick={() => router.push('/')}
-            className="text-purple-500 text-sm font-semibold hover:text-purple-700"
+            className="text-orange-500 text-sm font-bold hover:text-orange-700 transition-colors"
           >
             &larr; 돌아가기
           </button>
 
-          <h2 className="text-2xl font-extrabold text-center text-purple-700">
+          <h2 className="text-2xl font-black text-center bg-gradient-to-r from-teal-500 to-blue-500 bg-clip-text text-transparent">
             👫 친구와 대결
           </h2>
 
           <div className="space-y-3">
             <div>
-              <label className="text-sm font-bold text-purple-600 mb-1 block">
+              <label className="text-sm font-bold text-green-600 mb-1 block">
                 🟢 초 플레이어 (선공)
               </label>
               <input
@@ -64,11 +64,11 @@ export default function LocalPage() {
                 value={player1}
                 onChange={e => setPlayer1(e.target.value)}
                 placeholder="이름 (선택)"
-                className="w-full px-4 py-2 rounded-xl border-2 border-purple-200 focus:border-purple-500 outline-none font-semibold"
+                className="w-full px-4 py-2 rounded-xl border-2 border-green-200 focus:border-green-500 outline-none font-semibold"
               />
             </div>
             <div>
-              <label className="text-sm font-bold text-purple-600 mb-1 block">
+              <label className="text-sm font-bold text-red-500 mb-1 block">
                 🔴 한 플레이어 (후공)
               </label>
               <input
@@ -76,7 +76,7 @@ export default function LocalPage() {
                 value={player2}
                 onChange={e => setPlayer2(e.target.value)}
                 placeholder="이름 (선택)"
-                className="w-full px-4 py-2 rounded-xl border-2 border-purple-200 focus:border-purple-500 outline-none font-semibold"
+                className="w-full px-4 py-2 rounded-xl border-2 border-red-200 focus:border-red-500 outline-none font-semibold"
               />
             </div>
           </div>
@@ -98,15 +98,15 @@ export default function LocalPage() {
             setPhase('setup');
             setTimerRunning(false);
           }}
-          className="text-purple-500 text-sm font-semibold hover:text-purple-700"
+          className="text-orange-500 text-sm font-bold hover:text-orange-700 transition-colors"
         >
           &larr; 설정
         </button>
         <div className="flex items-center gap-4">
           <span className="text-sm font-bold text-gray-600">
-            <span className="text-purple-600">{player1 || '초'}</span>
+            <span className="text-green-600">{player1 || '초'}</span>
             {' vs '}
-            <span className="text-pink-500">{player2 || '한'}</span>
+            <span className="text-red-500">{player2 || '한'}</span>
           </span>
           <Timer running={timerRunning} />
         </div>
@@ -127,7 +127,7 @@ export default function LocalPage() {
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-40 p-4">
             <div className="game-card text-center space-y-4 animate-bounce-in max-w-sm w-full">
               <div className="text-5xl">🏆</div>
-              <h2 className="text-2xl font-extrabold text-purple-700">
+              <h2 className="text-2xl font-black bg-gradient-to-r from-orange-500 to-pink-500 bg-clip-text text-transparent">
                 {getWinnerName()}
               </h2>
               <p className="text-gray-500 text-sm">

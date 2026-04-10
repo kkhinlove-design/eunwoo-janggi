@@ -87,25 +87,21 @@ export function getAiMove(
 
   switch (level) {
     case 'baby': {
-      // Random legal move
       return moves[Math.floor(Math.random() * moves.length)];
     }
 
     case 'student': {
-      // Prioritize captures by piece value, then random
       const scored: ScoredMove[] = moves.map((m) => {
         const target = state.board[m.to[0]][m.to[1]];
         const captureValue = target ? PIECE_VALUES[target.type] : 0;
         return { ...m, score: captureValue + Math.random() * 0.5 };
       });
       scored.sort((a, b) => b.score - a.score);
-      // Pick from top moves with some randomness
       const topCount = Math.min(3, scored.length);
       return scored[Math.floor(Math.random() * topCount)];
     }
 
     case 'genius': {
-      // Minimax depth 2
       let bestMove = moves[0];
       let bestScore = -Infinity;
       for (const move of moves) {
@@ -120,10 +116,10 @@ export function getAiMove(
     }
 
     case 'robot': {
-      // Minimax depth 3
       let bestMove = moves[0];
       let bestScore = -Infinity;
-      for (const move of moves) {
+      const shuffled = [...moves].sort(() => Math.random() - 0.5);
+      for (const move of shuffled) {
         const newState = makeMove(state, move.from, move.to);
         const score = minimax(newState, 2, -Infinity, Infinity, false, state.turn);
         if (score > bestScore) {

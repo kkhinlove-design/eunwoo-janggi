@@ -175,17 +175,17 @@ export default function JanggiBoard({
       {/* Status */}
       <div className="text-center">
         {isAiThinking && (
-          <span className="text-purple-500 font-semibold animate-pulse">
-            AI가 생각 중...
+          <span className="text-orange-500 font-bold animate-pulse">
+            🤖 AI가 생각 중...
           </span>
         )}
         {gameState.isCheck && !gameState.winner && (
-          <span className="text-red-500 font-bold">장군!</span>
+          <span className="text-red-500 font-extrabold text-lg">⚡ 장군!</span>
         )}
         {!isOnlineMultiplayer && !gameState.winner && !isAiThinking && !gameState.isCheck && (
-          <span className="text-purple-600 font-semibold">
+          <span className="text-teal-600 font-bold">
             {isLocalMultiplayer
-              ? `${gameState.turn === 'cho' ? '초(Green)' : '한(Red)'}의 차례입니다`
+              ? `${gameState.turn === 'cho' ? '🟢 초' : '🔴 한'}의 차례입니다`
               : isPlayerTurn
                 ? '당신의 차례입니다'
                 : ''
@@ -202,7 +202,7 @@ export default function JanggiBoard({
             paddingBottom: `${(10 / 9) * 100}%`,
             background: 'linear-gradient(180deg, #e8c97a 0%, #d4a84b 100%)',
             borderRadius: '16px',
-            border: '3px solid #7c3aed',
+            border: '3px solid #ff6b35',
           }}
         >
           {/* SVG for board lines */}

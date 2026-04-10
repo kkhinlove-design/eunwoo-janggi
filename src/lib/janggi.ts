@@ -103,25 +103,27 @@ const palaceDiagonalDirs: [number, number][] = [
 
 function canMoveDiagonalInPalace(fromR: number, fromC: number, toR: number, toC: number): boolean {
   if (!isInAnyPalace(fromR, fromC) || !isInAnyPalace(toR, toC)) return false;
-  // Diagonal moves in palace: center connects to corners, corners connect to center
-  // Han palace center: (1,4), corners: (0,3),(0,5),(2,3),(2,5)
-  // Cho palace center: (8,4), corners: (7,3),(7,5),(9,3),(9,5)
   const dr = Math.abs(toR - fromR);
   const dc = Math.abs(toC - fromC);
   if (dr !== 1 || dc !== 1) return false;
 
-  // Must be on a diagonal line of the palace
-  // The diagonals connect: center(x,4) to corners, and mid-edges don't have diagonals
-  // Specifically: (0,3)-(1,4)-(2,5) and (0,5)-(1,4)-(2,3) for han
-  // (7,3)-(8,4)-(9,5) and (7,5)-(8,4)-(9,3) for cho
-  const centerR = (fromR <= 2 && toR <= 2) ? 1 : (fromR >= 7 && toR >= 7) ? 8 : -1;
-  if (centerR === -1) return false;
+  // 궁성 대각선은 중심과 꼭짓점을 연결하는 선
+  // Han 궁: 중심(1,4), 꼭짓점(0,3),(0,5),(2,3),(2,5)
+  // Cho 궁: 중심(8,4), 꼭짓점(7,3),(7,5),(9,3),(9,5)
+  // 두 칸이 같은 궁에 속해야 함
+  const inHan = fromR <= 2 && toR <= 2;
+  const inCho = fromR >= 7 && toR >= 7;
+  if (!inHan && !inCho) return false;
 
-  // One of from/to must be the center, or both must be on same diagonal through center
-  if ((fromR === centerR && fromC === 4) || (toR === centerR && toC === 4)) {
+  const centerR = inHan ? 1 : 8;
+  const centerC = 4;
+
+  // 둘 중 하나가 중심이면 대각선 이동 가능
+  if ((fromR === centerR && fromC === centerC) || (toR === centerR && toC === centerC)) {
     return true;
   }
-  // Corner to corner through center (2 steps - not applicable for 1-step moves)
+
+  // 꼭짓점끼리는 1칸 대각선으로 직접 이동 불가 (중심을 거쳐야 함)
   return false;
 }
 

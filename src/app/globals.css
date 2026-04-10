@@ -1,190 +1,320 @@
 @import "tailwindcss";
 
 :root {
-  --bg-gradient-from: #fdf2f8;
-  --bg-gradient-to: #ede9fe;
-  --primary: #8b5cf6;
-  --primary-light: #c4b5fd;
-  --accent: #f472b6;
-  --success: #34d399;
-  --warning: #fbbf24;
-  --board-bg: #e8c97a;
-  --board-bg-dark: #d4a84b;
+  /* 밝고 화사한 아이 친화 컬러 팔레트 */
+  --bg-gradient-from: #fff8e1;
+  --bg-gradient-via: #e8f5e9;
+  --bg-gradient-to: #e3f2fd;
+  --primary: #ff6b35;
+  --primary-light: #ffab76;
+  --primary-dark: #e55a2b;
+  --secondary: #2ec4b6;
+  --secondary-light: #7eded4;
+  --accent-pink: #ff6b9d;
+  --accent-yellow: #ffd166;
+  --accent-blue: #118ab2;
+  --success: #06d6a0;
+  --warning: #ffd166;
+  --board-bg: #f5deb3;
+  --board-bg-dark: #deb887;
   --board-line: #8b6914;
-  --cho-color: #1a7a3a;
-  --han-color: #c41e3a;
+  --cho-color: #2ecc71;
+  --han-color: #e74c3c;
+  --card-border: #ffe0b2;
+  --text-primary: #37474f;
+  --text-secondary: #78909c;
 }
 
 body {
-  background: linear-gradient(135deg, var(--bg-gradient-from), var(--bg-gradient-to));
+  background: linear-gradient(135deg, var(--bg-gradient-from) 0%, var(--bg-gradient-via) 50%, var(--bg-gradient-to) 100%);
   min-height: 100vh;
   min-height: 100dvh;
   font-family: 'Pretendard', sans-serif;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  color: var(--text-primary);
 }
 
-/* 카드 */
+/* ===== 카드 ===== */
 .game-card {
-  background: white;
-  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  border-radius: 24px;
   padding: 24px;
-  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.1);
-  border: 2px solid #ede9fe;
+  box-shadow:
+    0 8px 32px rgba(255, 107, 53, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 2px solid var(--card-border);
+  position: relative;
+  overflow: hidden;
 }
 
-/* 버튼 */
+.game-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary), var(--accent-yellow), var(--secondary), var(--accent-pink));
+  border-radius: 24px 24px 0 0;
+}
+
+/* ===== 버튼 ===== */
 .btn-primary {
-  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  background: linear-gradient(135deg, #ff6b35, #ff8c42);
   color: white;
   border: none;
-  border-radius: 14px;
-  padding: 12px 28px;
+  border-radius: 16px;
+  padding: 14px 28px;
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 4px 16px rgba(255, 107, 53, 0.35);
+  letter-spacing: 0.02em;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.15) 50%,
+    transparent 70%
+  );
+  transform: rotate(45deg) translateX(-100%);
+  transition: transform 0.6s;
+}
+
+.btn-primary:hover::after {
+  transform: rotate(45deg) translateX(100%);
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.4);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 24px rgba(255, 107, 53, 0.45);
+}
+
+.btn-primary:active {
+  transform: translateY(0) scale(0.98);
 }
 
 .btn-secondary {
-  background: linear-gradient(135deg, #f472b6, #ec4899);
+  background: linear-gradient(135deg, #2ec4b6, #3dd5c7);
   color: white;
   border: none;
-  border-radius: 14px;
-  padding: 12px 28px;
+  border-radius: 16px;
+  padding: 14px 28px;
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(244, 114, 182, 0.3);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 4px 16px rgba(46, 196, 182, 0.35);
+  letter-spacing: 0.02em;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-secondary::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.15) 50%,
+    transparent 70%
+  );
+  transform: rotate(45deg) translateX(-100%);
+  transition: transform 0.6s;
+}
+
+.btn-secondary:hover::after {
+  transform: rotate(45deg) translateX(100%);
 }
 
 .btn-secondary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(244, 114, 182, 0.4);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 24px rgba(46, 196, 182, 0.45);
 }
 
-/* 장기 보드 기물 */
+.btn-secondary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* ===== 장기 기물 ===== */
 .piece {
-  width: 80%;
-  height: 80%;
+  width: 82%;
+  height: 82%;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
+  font-weight: 900;
   font-size: clamp(0.7rem, 2.5vw, 1.2rem);
   color: white;
   z-index: 2;
   position: relative;
-  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-  transition: transform 0.15s;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
   user-select: none;
-  border: 2px solid rgba(255, 255, 255, 0.5);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .piece-cho {
-  background: radial-gradient(circle at 30% 30%, #2ecc71, #1a7a3a);
+  background: radial-gradient(circle at 35% 35%, #5dde8e, #2ecc71, #1a9e52);
+  border: 2.5px solid rgba(255, 255, 255, 0.6);
+  box-shadow:
+    2px 3px 6px rgba(0, 0, 0, 0.25),
+    inset 0 1px 2px rgba(255, 255, 255, 0.3);
 }
 
 .piece-han {
-  background: radial-gradient(circle at 30% 30%, #e74c3c, #c41e3a);
+  background: radial-gradient(circle at 35% 35%, #ff6b6b, #e74c3c, #c0392b);
+  border: 2.5px solid rgba(255, 255, 255, 0.6);
+  box-shadow:
+    2px 3px 6px rgba(0, 0, 0, 0.25),
+    inset 0 1px 2px rgba(255, 255, 255, 0.3);
+}
+
+.piece:hover {
+  transform: scale(1.08);
 }
 
 .piece.selected {
-  transform: scale(1.15);
-  box-shadow: 0 0 12px 4px rgba(139, 92, 246, 0.8);
+  transform: scale(1.18);
+  box-shadow:
+    0 0 0 3px rgba(255, 107, 53, 0.5),
+    0 0 16px 4px rgba(255, 107, 53, 0.4);
+  animation: selected-glow 1.5s ease-in-out infinite;
 }
 
+@keyframes selected-glow {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.5), 0 0 16px 4px rgba(255, 107, 53, 0.4); }
+  50% { box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.7), 0 0 24px 8px rgba(255, 107, 53, 0.5); }
+}
+
+/* 이동 가능 표시 */
 .valid-move-dot {
-  width: 30%;
-  height: 30%;
+  width: 32%;
+  height: 32%;
   border-radius: 50%;
-  background: rgba(139, 92, 246, 0.6);
+  background: radial-gradient(circle, rgba(255, 107, 53, 0.8), rgba(255, 107, 53, 0.4));
   position: absolute;
   z-index: 1;
   pointer-events: none;
-  animation: pulse 1s infinite;
+  animation: move-dot-pulse 1.2s ease-in-out infinite;
 }
 
 .valid-move-capture {
-  width: 80%;
-  height: 80%;
+  width: 82%;
+  height: 82%;
   border-radius: 50%;
-  border: 3px solid rgba(139, 92, 246, 0.8);
+  border: 3px dashed rgba(255, 107, 53, 0.8);
   position: absolute;
   z-index: 3;
   pointer-events: none;
-  animation: pulse 1s infinite;
+  animation: capture-spin 3s linear infinite;
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 1; }
+@keyframes move-dot-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.1); }
 }
 
+@keyframes capture-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 마지막 수 표시 */
 .last-move {
-  background: rgba(251, 191, 36, 0.25);
+  background: rgba(255, 209, 102, 0.35);
   border-radius: 50%;
 }
 
+/* 장군 표시 */
 .check-indicator {
-  animation: checkFlash 0.5s infinite alternate;
+  animation: check-flash 0.6s ease-in-out infinite alternate;
 }
 
-@keyframes checkFlash {
-  from { box-shadow: 0 0 8px 4px rgba(239, 68, 68, 0.4); }
-  to { box-shadow: 0 0 16px 8px rgba(239, 68, 68, 0.8); }
+@keyframes check-flash {
+  from { box-shadow: 0 0 8px 4px rgba(255, 0, 0, 0.3); }
+  to { box-shadow: 0 0 20px 10px rgba(255, 0, 0, 0.7); }
 }
 
-/* 프로그레스 바 */
+/* ===== 프로그레스 바 ===== */
 .progress-bar {
-  height: 12px;
-  border-radius: 6px;
-  background: #e9d5ff;
+  height: 14px;
+  border-radius: 7px;
+  background: #ffe0b2;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  border-radius: 6px;
-  background: linear-gradient(90deg, #8b5cf6, #f472b6);
+  border-radius: 7px;
+  background: linear-gradient(90deg, var(--primary), var(--accent-yellow), var(--secondary));
   transition: width 0.5s ease;
 }
 
-/* 애니메이션 */
+/* ===== 애니메이션 ===== */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-4px); }
-  75% { transform: translateX(4px); }
+  20% { transform: translateX(-5px) rotate(-1deg); }
+  40% { transform: translateX(5px) rotate(1deg); }
+  60% { transform: translateX(-3px) rotate(-0.5deg); }
+  80% { transform: translateX(3px) rotate(0.5deg); }
 }
 
 @keyframes bounce-in {
-  0% { transform: scale(0); opacity: 0; }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); opacity: 1; }
+  0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+  50% { transform: scale(1.15) rotate(2deg); }
+  70% { transform: scale(0.95) rotate(-1deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 
 @keyframes confetti-fall {
   0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
-  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  100% { transform: translateY(100vh) rotate(1080deg); opacity: 0; }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes rainbow-border {
+  0% { border-color: var(--primary); }
+  25% { border-color: var(--accent-yellow); }
+  50% { border-color: var(--secondary); }
+  75% { border-color: var(--accent-pink); }
+  100% { border-color: var(--primary); }
 }
 
 .animate-bounce-in {
-  animation: bounce-in 0.4s ease forwards;
+  animation: bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-/* confetti */
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* ===== Confetti ===== */
 .confetti-piece {
   position: fixed;
   width: 10px;
@@ -194,7 +324,7 @@ body {
   z-index: 1000;
 }
 
-/* 잡은 기물 */
+/* ===== 잡은 기물 ===== */
 .captured-pieces {
   display: flex;
   flex-wrap: wrap;
@@ -203,16 +333,27 @@ body {
   font-size: 1.2rem;
 }
 
-/* 반응형 */
+/* ===== 입력 필드 스타일 통일 ===== */
+input[type="text"] {
+  transition: all 0.3s ease;
+  border-color: #ffe0b2;
+}
+
+input[type="text"]:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.15);
+}
+
+/* ===== 반응형 ===== */
 @media (max-width: 480px) {
   .piece {
-    font-size: clamp(0.6rem, 3vw, 0.9rem);
-    border-width: 1.5px;
+    font-size: clamp(0.55rem, 3vw, 0.85rem);
+    border-width: 2px;
   }
 
   .game-card {
-    padding: 14px;
-    border-radius: 14px;
+    padding: 16px;
+    border-radius: 20px;
   }
 }
 
@@ -230,4 +371,23 @@ body {
   .game-card {
     padding: 32px;
   }
+}
+
+/* ===== 스크롤바 꾸미기 ===== */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #fff3e0;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--primary-light), var(--secondary-light));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--primary), var(--secondary));
 }

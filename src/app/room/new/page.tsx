@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 function generateCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = '';
-  for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
   return code;
 }
 
@@ -45,14 +45,14 @@ function NewRoomContent() {
 
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <div className="text-2xl text-purple-400">방 만드는 중... ♜</div>
+      <div className="text-2xl text-orange-400 animate-pulse">방 만드는 중... ♜</div>
     </div>
   );
 }
 
 export default function NewRoomPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="text-2xl text-purple-400">로딩 중...</div></div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="text-2xl text-orange-400 animate-pulse">로딩 중...</div></div>}>
       <NewRoomContent />
     </Suspense>
   );
