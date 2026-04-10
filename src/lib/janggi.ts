@@ -133,7 +133,7 @@ function cloneBoard(board: Board): Board {
 
 export function getPieceChar(piece: Piece): string {
   switch (piece.type) {
-    case 'king': return '궁';
+    case 'king': return piece.player === 'cho' ? '楚' : '漢';
     case 'chariot': return '車';
     case 'cannon': return '包';
     case 'horse': return '馬';
