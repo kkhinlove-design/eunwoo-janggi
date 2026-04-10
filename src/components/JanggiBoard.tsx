@@ -229,9 +229,6 @@ export default function JanggiBoard({
               />
             ))}
             <rect x={50} y={450} width={800} height={100} fill="rgba(139, 105, 20, 0.05)" />
-            <text x={450} y={510} textAnchor="middle" fill="rgba(139,105,20,0.3)" fontSize="36" fontWeight="bold">
-              楚 河 漢 界
-            </text>
             <line x1={350} y1={50} x2={550} y2={250} stroke="#8b6914" strokeWidth="1.5" opacity="0.6" />
             <line x1={550} y1={50} x2={350} y2={250} stroke="#8b6914" strokeWidth="1.5" opacity="0.6" />
             <line x1={350} y1={750} x2={550} y2={950} stroke="#8b6914" strokeWidth="1.5" opacity="0.6" />
