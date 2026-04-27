@@ -1,20 +1,30 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import JanggiBoard from '@/components/JanggiBoard';
 import Timer from '@/components/Timer';
 import Confetti from '@/components/Confetti';
+import { supabase } from '@/lib/supabase';
 import type { Player } from '@/lib/janggi';
 import type { AiLevel } from '@/lib/janggi-ai';
 
 type GamePhase = 'setup' | 'playing' | 'ended';
 
-const AI_LEVELS: { key: AiLevel; label: string; emoji: string; desc: string; color: string }[] = [
-  { key: 'baby', label: '아기 AI', emoji: '👶', desc: '랜덤으로 둬요', color: 'from-green-400 to-emerald-500' },
-  { key: 'student', label: '학생 AI', emoji: '🧑‍🎓', desc: '기물 먹기 우선', color: 'from-blue-400 to-cyan-500' },
-  { key: 'genius', label: '천재 AI', emoji: '🧠', desc: '2수 앞 계산!', color: 'from-purple-400 to-pink-500' },
-  { key: 'robot', label: '로봇 AI', emoji: '🤖', desc: '3수 앞 계산!!', color: 'from-red-400 to-orange-500' },
+interface PlayerRow {
+  id: string;
+  name: string;
+  avatar_emoji: string;
+  janggi_games_played: number;
+  janggi_games_won: number;
+  janggi_total_score: number;
+}
+
+const AI_LEVELS: { key: AiLevel; label: string; emoji: string; desc: string; color: string; reward: number }[] = [
+  { key: 'baby', label: '아기 AI', emoji: '👶', desc: '랜덤으로 둬요', color: 'from-green-400 to-emerald-500', reward: 50 },
+  { key: 'student', label: '학생 AI', emoji: '🧑‍🎓', desc: '기물 먹기 우선', color: 'from-blue-400 to-cyan-500', reward: 100 },
+  { key: 'genius', label: '천재 AI', emoji: '🧠', desc: '2수 앞 계산!', color: 'from-purple-400 to-pink-500', reward: 150 },
+  { key: 'robot', label: '로봇 AI', emoji: '🤖', desc: '3수 앞 계산!!', color: 'from-red-400 to-orange-500', reward: 200 },
 ];
 
 export default function PlayPage() {
@@ -23,12 +33,24 @@ export default function PlayPage() {
   const [playerSide, setPlayerSide] = useState<Player>('cho');
   const [aiLevel, setAiLevel] = useState<AiLevel>('baby');
   const [timerRunning, setTimerRunning] = useState(false);
-  const [result, setResult] = useState<{ winner: Player; moveCount: number } | null>(null);
+  const [result, setResult] = useState<{ winner: Player; moveCount: number; reward: number } | null>(null);
   const [moveCount, setMoveCount] = useState(0);
   const [gameKey, setGameKey] = useState(0);
+  const [me, setMe] = useState<PlayerRow | null>(null);
 
   const moveCountRef = useRef(moveCount);
   moveCountRef.current = moveCount;
+
+  // 로그인된 player 로드 (홈에서 저장한 localStorage 값)
+  useEffect(() => {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('janggi_player_id') : null;
+    if (!saved) return;
+    let cancelled = false;
+    supabase.from('players').select('*').eq('id', saved).single().then(({ data }) => {
+      if (!cancelled && data) setMe(data as PlayerRow);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   const startGame = () => {
     setPhase('playing');
@@ -38,11 +60,30 @@ export default function PlayPage() {
     setGameKey(k => k + 1);
   };
 
-  const handleGameEnd = useCallback((winner: Player) => {
-    setResult({ winner, moveCount: moveCountRef.current });
+  const handleGameEnd = useCallback(async (winner: Player) => {
+    const isWin = winner === playerSide;
+    const reward = isWin ? (AI_LEVELS.find(l => l.key === aiLevel)?.reward ?? 100) : 0;
+    setResult({ winner, moveCount: moveCountRef.current, reward });
     setPhase('ended');
     setTimerRunning(false);
-  }, []);
+
+    if (!me) return;
+    const { data: p } = await supabase
+      .from('players')
+      .select('janggi_games_played, janggi_games_won, janggi_total_score')
+      .eq('id', me.id)
+      .single();
+    if (!p) return;
+    await supabase.from('players').update({
+      janggi_games_played: (p.janggi_games_played ?? 0) + 1,
+      ...(isWin
+        ? {
+            janggi_games_won: (p.janggi_games_won ?? 0) + 1,
+            janggi_total_score: (p.janggi_total_score ?? 0) + reward,
+          }
+        : {}),
+    }).eq('id', me.id);
+  }, [playerSide, aiLevel, me]);
 
   const getResultMessage = () => {
     if (!result) return '';
@@ -70,6 +111,18 @@ export default function PlayPage() {
           <h2 className="text-2xl font-black text-center bg-gradient-to-r from-orange-500 to-pink-500 bg-clip-text text-transparent">
             🤖 AI 대결
           </h2>
+
+          {me ? (
+            <div className="text-center text-sm bg-orange-50 rounded-xl py-2 px-3">
+              <span className="text-xl mr-1">{me.avatar_emoji}</span>
+              <span className="font-bold text-gray-800">{me.name}</span>
+              <span className="text-gray-500"> · 이기면 점수가 올라가요!</span>
+            </div>
+          ) : (
+            <div className="text-center text-xs text-red-500 bg-red-50 rounded-xl py-2 px-3">
+              로그인이 안 돼있어요. 홈에서 이름을 먼저 등록해주세요.
+            </div>
+          )}
 
           {/* 진영 선택 */}
           <div>
@@ -100,7 +153,7 @@ export default function PlayPage() {
 
           {/* AI 난이도 */}
           <div>
-            <h3 className="font-bold text-teal-600 mb-2">AI 난이도</h3>
+            <h3 className="font-bold text-teal-600 mb-2">AI 난이도 (이기면 점수!)</h3>
             <div className="grid grid-cols-2 gap-3">
               {AI_LEVELS.map(level => (
                 <button
@@ -115,6 +168,7 @@ export default function PlayPage() {
                   <div className="text-2xl mb-1">{level.emoji}</div>
                   <div className="font-bold text-sm text-gray-800">{level.label}</div>
                   <div className="text-xs text-gray-500">{level.desc}</div>
+                  <div className="text-xs font-bold text-orange-500 mt-1">+{level.reward}점</div>
                 </button>
               ))}
             </div>
@@ -172,6 +226,9 @@ export default function PlayPage() {
               <p className="text-gray-500 text-sm">
                 {result.winner === 'cho' ? '초(Green)' : '한(Red)'} 승리 | {result.moveCount}수
               </p>
+              {me && result.reward > 0 && (
+                <p className="text-orange-500 font-extrabold text-lg">+{result.reward}점 획득!</p>
+              )}
               <div className="flex gap-3">
                 <button
                   onClick={() => {
